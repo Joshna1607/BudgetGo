@@ -1,0 +1,115 @@
+.invite-accept {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.invite-container {
+  background: white;
+  border-radius: 12px;
+  padding: 3rem;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+}
+
+.invite-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.invite-icon {
+  font-size: 4rem;
+  color: #667eea;
+  margin-bottom: 1rem;
+}
+
+.invite-header h1 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+}
+
+.invite-header p {
+  color: #666;
+  margin: 0;
+}
+
+.register-form {
+  margin-top: 2rem;
+}
+
+.register-form h2 {
+  margin-top: 0;
+}
+
+.loading-container,
+.error-container {
+  text-align: center;
+  padding: 2rem;
+}
+
+.loading-container {
+  background: white;
+  border-radius: 12px;
+  max-width: 400px;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  font-size: 3rem;
+  color: #667eea;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.error-container svg {
+  font-size: 3rem;
+  color: #dc3545;
+  margin-bottom: 1rem;
+}
+
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.accept-section {
+  text-align: center;
+  margin-top: 2rem;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 1rem;
+  color: #666;
+}
+
+.login-link a {
+  color: #667eea;
+  text-decoration: none;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+}
+

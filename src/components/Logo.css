@@ -1,0 +1,78 @@
+/* Logo.css */
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  user-select: none;
+}
+
+.logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Size Variants */
+.logo-small .logo-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.logo-medium .logo-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.logo-large .logo-icon {
+  width: 64px;
+  height: 64px;
+}
+
+/* Typography Branding */
+.logo-text {
+  display: flex;
+  align-items: baseline;
+  line-height: 1;
+}
+
+/* Specific request: "B and G some big" */
+.logo-text-main {
+  font-weight: 700;
+  color: var(--primary);
+  /* Royal Blue */
+  font-size: 1.5rem;
+  /* Base size */
+}
+
+/* Target the 'B' in Budget (We'll use ::first-letter or spans in JSX) */
+/* Since it's a span, first-letter relies on block context usually, but we can just bump the font size of the span itself if we split it. 
+   However, cleaner checks: The user wants "BudgetGo".
+*/
+
+.logo-text-go {
+  font-weight: 800;
+  color: var(--secondary);
+  /* Teal */
+  font-size: 1.5rem;
+}
+
+/* Custom "Brand" look with bigger initials */
+.brand-initial {
+  font-size: 1.3em;
+  /* 30% bigger than the rest */
+}
+
+/* In Layout sidebar, we want it centered */
+.sidebar-header .logo-container {
+  justify-content: center;
+  width: 100%;
+}
+
+.sidebar-header .logo-icon {
+  /* Optional: Hide icon in title if they just want text, but user said "naming brand" usually implies text. 
+       Let's keep icon but make text dominant. */
+  width: 36px;
+  height: 36px;
+}
