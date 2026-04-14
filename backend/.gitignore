@@ -10,3 +10,5 @@ target/
 # OS
 .DS_Store
 
+# Env Files
+.env
