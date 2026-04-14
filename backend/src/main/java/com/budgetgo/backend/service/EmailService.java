@@ -1,37 +1,75 @@
 package com.budgetgo.backend.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import jakarta.mail.internet.MimeMessage;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.logging.Logger;
 
 @Service
 public class EmailService {
-    // Force Recompile
     private static final Logger logger = Logger.getLogger(EmailService.class.getName());
 
-    // Trigger Recompile
-    @Autowired
-    private JavaMailSender mailSender;
+    @Value("${BREVO_API_KEY:}")
+    private String brevoApiKey;
+
+    @Value("${MAIL_USERNAME:budgetgo3@gmail.com}")
+    private String senderEmail;
+
+    private void sendBrevoEmail(String toEmail, String subject, String htmlContent) {
+        try {
+            if (brevoApiKey == null || brevoApiKey.isEmpty()) {
+                logger.warning("VITAL: 'BREVO_API_KEY' is missing in your Environment Variables. Email bypassed.");
+                return;
+            }
+
+            JSONObject body = new JSONObject();
+
+            JSONObject sender = new JSONObject();
+            sender.put("name", "BudgetGo Team");
+            sender.put("email", senderEmail);
+            body.put("sender", sender);
+
+            JSONArray to = new JSONArray();
+            JSONObject recipient = new JSONObject();
+            recipient.put("email", toEmail);
+            to.put(recipient);
+            body.put("to", to);
+
+            body.put("subject", subject);
+            body.put("htmlContent", htmlContent);
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.brevo.com/v3/smtp/email"))
+                    .header("accept", "application/json")
+                    .header("api-key", brevoApiKey)
+                    .header("content-type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                logger.info("Real World Email sent successfully via Brevo to: " + toEmail);
+            } else {
+                logger.severe("Brevo API failed. Status: " + response.statusCode() + " | Body: " + response.body());
+            }
+
+        } catch (Exception e) {
+            logger.severe("Failed to send real email via Brevo HTTP API: " + e.getMessage());
+        }
+    }
 
     public void sendInvitationEmail(String toEmail, String tripName, String invitationLink, String invitedBy) {
-        try {
-            String subject = "You've been invited to join a trip: " + tripName;
-            String body = buildInvitationEmailBody(tripName, invitationLink, invitedBy);
-
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-            mailSender.send(message);
-
-            logger.info("Invitation email sent to: " + toEmail);
-        } catch (Exception e) {
-            logger.severe("Failed to send invitation email: " + e.getMessage());
-        }
+        String subject = "You've been invited to join a trip: " + tripName;
+        String body = buildInvitationEmailBody(tripName, invitationLink, invitedBy);
+        sendBrevoEmail(toEmail, subject, body);
     }
 
     private String buildInvitationEmailBody(String tripName, String invitationLink, String invitedBy) {
@@ -52,27 +90,15 @@ public class EmailService {
     }
 
     public void sendOtpEmail(String toEmail, String otp) {
-        try {
-            String subject = "BudgetGo - Verify your email";
-            String body = buildOtpEmailBody(otp);
-
-            // ALWAYS Log OTP for Dev Mode/Fallback
-            logger.info("=== OTP GENERATED (Dev Mode) ===");
-            logger.info("To: " + toEmail);
-            logger.info("OTP: " + otp);
-            logger.info("================================");
-
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-            mailSender.send(message);
-
-            logger.info("OTP email sent to: " + toEmail);
-        } catch (Exception e) {
-            logger.severe("Failed to send real OTP email (Check credentials): " + e.getMessage());
-        }
+        String subject = "BudgetGo - Verify your email";
+        String body = buildOtpEmailBody(otp);
+        
+        logger.info("=== OTP GENERATED (Dev Mode) ===");
+        logger.info("To: " + toEmail);
+        logger.info("OTP: " + otp);
+        logger.info("================================");
+        
+        sendBrevoEmail(toEmail, subject, body);
     }
 
     private String buildOtpEmailBody(String otp) {
@@ -89,40 +115,10 @@ public class EmailService {
                 otp);
     }
 
-    // Removed the old buildOtpEmailBody as it's no longer used by the new
-    // sendOtpEmail
-    // private String buildOtpEmailBody(String otp) {
-    // return String.format(
-    // "<html><body style='font-family: Arial, sans-serif; padding: 20px;'>" +
-    // "<h2 style='color: #667eea;'>Verify your email address</h2>" +
-    // "<p>Your One-Time Password (OTP) for BudgetGo registration is:</p>" +
-    // "<div style='margin: 20px 0; font-size: 24px; font-weight: bold;
-    // letter-spacing: 5px; color: #333;'>"
-    // +
-    // "%s" +
-    // "</div>" +
-    // "<p style='color: #666; font-size: 12px;'>This OTP will expire in 10
-    // minutes.</p>" +
-    // "</body></html>",
-    // otp);
-    // }
-
     public void sendWelcomeEmail(String toEmail, String name) {
-        try {
-            String subject = "Welcome to BudgetGo \uD83C\uDF89";
-            String body = buildWelcomeEmailBody(name);
-
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-            mailSender.send(message);
-
-            logger.info("Welcome email sent to: " + toEmail);
-        } catch (Exception e) {
-            logger.severe("Failed to send welcome email: " + e.getMessage());
-        }
+        String subject = "Welcome to BudgetGo \uD83C\uDF89";
+        String body = buildWelcomeEmailBody(name);
+        sendBrevoEmail(toEmail, subject, body);
     }
 
     private String buildWelcomeEmailBody(String name) {
@@ -140,21 +136,9 @@ public class EmailService {
     }
 
     public void sendInvitationAcceptedEmail(String toEmail, String tripName) {
-        try {
-            String subject = "You've joined the trip: " + tripName;
-            String body = buildInvitationAcceptedEmailBody(tripName);
-
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-            mailSender.send(message);
-
-            logger.info("Invitation accepted email sent to: " + toEmail);
-        } catch (Exception e) {
-            logger.severe("Failed to send invitation accepted email: " + e.getMessage());
-        }
+        String subject = "You've joined the trip: " + tripName;
+        String body = buildInvitationAcceptedEmailBody(tripName);
+        sendBrevoEmail(toEmail, subject, body);
     }
 
     private String buildInvitationAcceptedEmailBody(String tripName) {
@@ -171,21 +155,9 @@ public class EmailService {
     }
 
     public void sendTripCreatedEmail(String toEmail, String tripName) {
-        try {
-            String subject = "Trip Created: " + tripName + " \uD83C\uDF0D";
-            String body = buildTripCreatedEmailBody(tripName);
-
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-            mailSender.send(message);
-
-            logger.info("Trip created email sent to: " + toEmail);
-        } catch (Exception e) {
-            logger.severe("Failed to send trip created email: " + e.getMessage());
-        }
+        String subject = "Trip Created: " + tripName + " \uD83C\uDF0D";
+        String body = buildTripCreatedEmailBody(tripName);
+        sendBrevoEmail(toEmail, subject, body);
     }
 
     private String buildTripCreatedEmailBody(String tripName) {
@@ -202,21 +174,9 @@ public class EmailService {
     }
 
     public void sendBookingConfirmedEmail(String toEmail, String bookingName, String type) {
-        try {
-            String subject = "Booking Confirmed: " + bookingName + " \u2705";
-            String body = buildBookingConfirmedEmailBody(bookingName, type);
-
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setTo(toEmail);
-            helper.setSubject(subject);
-            helper.setText(body, true);
-            mailSender.send(message);
-
-            logger.info("Booking confirmed email sent to: " + toEmail);
-        } catch (Exception e) {
-            logger.severe("Failed to send booking confirmed email: " + e.getMessage());
-        }
+        String subject = "Booking Confirmed: " + bookingName + " \u2705";
+        String body = buildBookingConfirmedEmailBody(bookingName, type);
+        sendBrevoEmail(toEmail, subject, body);
     }
 
     private String buildBookingConfirmedEmailBody(String bookingName, String type) {
